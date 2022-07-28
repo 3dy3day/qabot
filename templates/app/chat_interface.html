@@ -1,0 +1,86 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="container">
+    <!-- Chat log-->
+    <ul class="chat-thread">
+        <div class="myBox", style="height: 700px; width:100%; overflow-y: scroll; background-color: aliceblue; border-radius: 10px;", id="chat_box">
+            <li align="left" style="padding: 12px;"><span, style="background-color: #FFEBEE;">TSUMUGI_AI: 問い合わせたい機械を教えてください </span></li>
+        </div>
+    </ul>
+
+    <form class="col s12" onsubmit="changeHandler(); return false;" autocomplete="off">
+        <div class="row">
+            <div class="input-field col s12">
+                <input name="text" id="textarea1" type="text" class="materialize-textarea">
+                <label for="textarea1">Textarea</label>
+            </div>
+        </div>
+    </form>
+
+    <script>
+        const chatlog = [];
+        let State = 0;
+        let list = document.getElementById('chat_box');
+        let keyword1 = "";
+        let keyword2 = "";
+
+        function changeHandler() {
+            const inputText = $("#textarea1").val();
+            console.log(inputText);
+            if (State == 0) {
+                const chat = {"who": "user", "message": inputText};
+                keyword1 = inputText;
+                clearText();
+                addChat(chat);
+                const navi = {"who": "ai", "message": "問題の状況を簡潔に説明してください"};
+                addChat(navi);
+                State = 1;
+            } else if (State == 1) {
+                const chat = {"who": "user", "message": inputText};
+                keyword2 = inputText;
+                clearText();
+                addChat(chat);
+                searchItem = {"keyword1": keyword1, "keyword2": keyword2};
+                $.ajax("/ai_intereact", {
+                    type: "post",
+                    data: searchItem,
+                    dataType: "json",
+                }).done(function(receivedData) {
+                    console.log("Ajax Success");
+                    addChat(receivedData);
+                    const hoge = {"who": "ai", "message": "問題が解決しなかった場合、もう一度機械名を入力した後に別の説明を行ってください"};
+                    addChat(hoge);
+                    State = 0;
+                }).fail(function(data) {
+                    alert("Oops, Something Went Wrong");
+                });
+                
+            }
+        }
+
+        function addChat(chat) {
+            chatlog.push(chat);
+            if (chat["who"] == "ai") {
+                addChatToScreen(chat);
+            } else if (chat["who"] == "user") {
+                addChatToScreen(chat);
+            }
+        }
+
+        function addChatToScreen(chat) {
+            if (chat["who"] == "user") {   
+                $("#chat_box").append(`<li align="right" style="padding: 12px;"><span, style="background-color: #FFCDD2;"> ${chat["message"]} </span></li>`);
+            } else if (chat["who"] == "ai") {
+                $("#chat_box").append(`<li align="left" style="padding: 12px;"><span, style="background-color: #FFEBEE;">TSUMUGI_AI: ${chat["message"]} </span></li>`);
+            }
+            list.scrollTo(0, list.scrollHeight);
+        }
+
+        function clearText() {
+            var textForm = document.getElementById("textarea1");
+            textForm.value = '';
+        }
+
+    </script>
+</div>
+{% endblock %}
